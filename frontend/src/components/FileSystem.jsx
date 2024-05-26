@@ -1,220 +1,262 @@
-// import React from "react";
-import { DiCss3, DiJavascript, DiNpm } from "react-icons/di";
-import {
-  FaHtml5,
-  FaList,
-  FaPython,
-  FaReact,
-  FaRegFolder,
-  FaRegFolderOpen,
-} from "react-icons/fa";
-import TreeView, { flattenTree } from "react-accessible-treeview";
-import "../assets/FileSystemStyles.css";
-import { useEffect, useState } from "react";
-import axios from "axios";
+import * as React from "react";
+import clsx from "clsx";
+import { animated, useSpring } from "@react-spring/web";
+import { styled, alpha } from "@mui/material/styles";
 
-const folder = {
-  name: "",
-  children: [
-    {
-      name: "src",
-      children: [
-        { name: "index.js" },
-        { name: "styles.css" },
-        { name: "temp.py" },
-        { name: "About.tsx" },
-      ],
-    },
-    {
-      name: "node_modules",
-      children: [
-        {
-          name: "react-accessible-treeview",
-          children: [{ name: "index.js" }],
-        },
-        { name: "react", children: [{ name: "index.js" }] },
-      ],
-    },
-    {
-      name: ".npmignore",
-    },
-    {
-      name: "package.json",
-    },
-    {
-      name: "webpack.config.js",
-    },
-  ],
+import Box from "@mui/material/Box";
+import Collapse from "@mui/material/Collapse";
+import Typography from "@mui/material/Typography";
+import FolderRounded from "@mui/icons-material/FolderRounded";
+import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
+import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
+import { unstable_useTreeItem2 as useTreeItem2 } from "@mui/x-tree-view/useTreeItem2";
+import {
+  TreeItem2Checkbox,
+  TreeItem2Content,
+  TreeItem2IconContainer,
+  TreeItem2Label,
+  TreeItem2Root,
+} from "@mui/x-tree-view/TreeItem2";
+import { TreeItem2Icon } from "@mui/x-tree-view/TreeItem2Icon";
+import { TreeItem2Provider } from "@mui/x-tree-view/TreeItem2Provider";
+
+import { IoLogoJavascript } from "react-icons/io5";
+import {
+  FaReact,
+  FaGitAlt,
+  FaHtml5,
+  FaCss3Alt,
+  FaEnvelopeOpenText,
+  FaFolder,
+  FaFolderMinus,
+} from "react-icons/fa";
+import { FaMarkdown } from "react-icons/fa";
+
+import { BsFiletypeJson } from "react-icons/bs";
+
+import { useTreeViewApiRef } from "@mui/x-tree-view/hooks";
+import { useRecoilState, useSetRecoilState } from "recoil";
+import { fileKeyState } from "../fileKeyState";
+
+const getIconFromFileType = (fileType, status) => {
+  // console.log("This is filetype", fileType);
+  switch (fileType) {
+    case "ts":
+    case "cjs":
+    case "mjs":
+    case "js":
+      return IoLogoJavascript;
+    case "jsx":
+      return FaReact;
+    case "gitignore":
+      return FaGitAlt;
+    case "html":
+      return FaHtml5;
+    case "folder":
+      return status.expanded ? FaFolderMinus : FaFolder;
+    case "md":
+      return FaMarkdown;
+    case "css":
+      return FaCss3Alt;
+    case "json":
+      return BsFiletypeJson;
+    default:
+      return FaEnvelopeOpenText;
+  }
 };
 
-let FolderPath = {};
+const StyledTreeItemRoot = styled(TreeItem2Root)(({ theme }) => ({
+  color:
+    theme.palette.mode === "light"
+      ? theme.palette.grey[800]
+      : theme.palette.grey[400],
+  position: "relative",
+  [`& .${treeItemClasses.groupTransition}`]: {
+    marginLeft: theme.spacing(3.5),
+  },
+}));
 
-function correctName(folderValues) {
-  folderValues.map((folder) => {
-    // folder.metadata = folder.name;
-    FolderPath[folder.id] =
-      (folderValues[folder.parent]
-        ? folderValues[folder.parent].name + "/"
-        : "") + folder.name;
+const CustomTreeItemContent = styled(TreeItem2Content)(({ theme }) => ({
+  flexDirection: "row-reverse",
+  borderRadius: theme.spacing(0.7),
+  marginBottom: theme.spacing(0.5),
+  marginTop: theme.spacing(0.5),
+  padding: theme.spacing(0.5),
+  paddingRight: theme.spacing(1),
+  fontWeight: 500,
+  [`& .${treeItemClasses.iconContainer}`]: {
+    marginRight: theme.spacing(2),
+  },
+  [`&.Mui-expanded `]: {
+    "&:not(.Mui-focused, .Mui-selected, .Mui-selected.Mui-focused) .labelIcon":
+      {
+        color:
+          theme.palette.mode === "light"
+            ? theme.palette.primary.main
+            : theme.palette.primary.dark,
+      },
+    "&::before": {
+      content: '""',
+      display: "block",
+      position: "absolute",
+      left: "16px",
+      top: "44px",
+      height: "calc(100% - 48px)",
+      width: "1.5px",
+      backgroundColor:
+        theme.palette.mode === "light"
+          ? theme.palette.grey[300]
+          : theme.palette.grey[700],
+    },
+  },
+  "&:hover": {
+    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+    color:
+      theme.palette.mode === "light" ? theme.palette.primary.main : "white",
+  },
+  [`&.Mui-focused, &.Mui-selected, &.Mui-selected.Mui-focused`]: {
+    backgroundColor:
+      theme.palette.mode === "light"
+        ? theme.palette.primary.main
+        : theme.palette.primary.dark,
+    color: theme.palette.primary.contrastText,
+  },
+}));
 
-    folder.name = folder.name.split("/").pop();
+const AnimatedCollapse = animated(Collapse);
+
+function TransitionComponent(props) {
+  const style = useSpring({
+    to: {
+      opacity: props.in ? 1 : 0,
+      transform: `translate3d(0,${props.in ? 0 : 20}px,0)`,
+    },
   });
-  console.log("folder path", FolderPath);
-  console.log(folderValues);
-  return folderValues;
-}
 
-function FileSystem() {
-  const [folderData, setFolderData] = useState(folder);
-
-  useEffect(() => {
-    async function GetData() {
-      const response = await axios.post("/api/list-folder", {
-        folderKey: "Replit-Clone",
-      });
-      // console.log("Response", response);
-      setFolderData(response.data);
-    }
-    // console.log(flattenTree(folderData));
-    GetData();
-  }, []);
   return (
-    <div>
-      <div className="directory">
-        <TreeView
-          data={correctName(flattenTree(folderData))}
-          aria-label="directory tree"
-          nodeRenderer={({
-            element,
-            isBranch,
-            isExpanded,
-            getNodeProps,
-            level,
-          }) => (
-            <div
-              {...getNodeProps()}
-              style={{ paddingLeft: 20 * (level - 1), display: "flex" }}>
-              {isBranch ? (
-                <div
-                  onClick={() => {
-                    console.log("Folder Clicked");
-                  }}>
-                  <FolderIcon isOpen={isExpanded} />
-                </div>
-              ) : (
-                <div
-                  onClick={() => {
-                    console.log(
-                      `File icon with name ${element.name} and path${
-                        FolderPath[element.id]
-                      } clicked
-                    `
-                    );
-                    console.log("This is folderPath", FolderPath);
-                  }}>
-                  <FileIcon filename={element.name} />
-                </div>
-              )}
-
-              {element.name}
-            </div>
-          )}
-        />
-      </div>
-    </div>
+    <AnimatedCollapse
+      style={style}
+      {...props}
+    />
   );
 }
 
-const FolderIcon = ({ isOpen }) =>
-  isOpen ? (
-    <FaRegFolderOpen
-      color="e8a87c"
-      className="icon"
-      style={{ width: "25px", height: "25px" }}
-    />
-  ) : (
-    <FaRegFolder
-      color="e8a87c"
-      className="icon"
-      style={{ width: "25px", height: "25px" }}
-    />
+const StyledTreeItemLabelText = styled(Typography)({
+  color: "inherit",
+  fontFamily: "General Sans",
+  fontWeight: 500,
+});
+
+function CustomLabel({ icon: Icon, expandable, children, ...other }) {
+  return (
+    <TreeItem2Label
+      {...other}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+      }}>
+      {Icon && (
+        <Box
+          component={Icon}
+          className="labelIcon"
+          color="Black"
+          sx={{ mr: 1, fontSize: "1.2rem" }}
+        />
+      )}
+
+      <StyledTreeItemLabelText variant="body2">
+        {children}
+      </StyledTreeItemLabelText>
+    </TreeItem2Label>
   );
+}
 
-const FileIcon = ({ filename }) => {
-  const extension = filename.slice(filename.lastIndexOf(".") + 1).toLowerCase();
-  let IconComponent;
+const isExpandable = (reactChildren) => {
+  if (Array.isArray(reactChildren)) {
+    return reactChildren.length > 0 && reactChildren.some(isExpandable);
+  }
+  return Boolean(reactChildren);
+};
 
-  // Determine the icon based on the file extension
-  switch (extension) {
-    case "js":
-      IconComponent = (
-        <DiJavascript
-          color="yellow"
-          className="icon"
-          style={{ width: "20px", height: "20px" }}
-        />
-      );
-      break;
-    case "css":
-      IconComponent = (
-        <DiCss3
-          color="turquoise"
-          className="icon"
-          style={{ width: "20px", height: "20px" }}
-        />
-      );
-      break;
-    case "json":
-      IconComponent = (
-        <FaList
-          color="yellow"
-          className="icon"
-          style={{ width: "20px", height: "20px" }}
-        />
-      );
-      break;
-    case "npmignore":
-      IconComponent = (
-        <DiNpm
-          color="red"
-          className="icon"
-          style={{ width: "20px", height: "20px" }}
-        />
-      );
-      break;
-    case "jsx":
-    case "tsx":
-      IconComponent = (
-        <FaReact
-          color="blue"
-          className="icon"
-          style={{ width: "20px", height: "20px" }}
-        />
-      );
-      break;
-    case "py":
-      IconComponent = (
-        <FaPython
-          color="blue"
-          className="icon"
-          style={{ width: "20px", height: "20px" }}
-        />
-      );
-      break;
-    case "html":
-      IconComponent = (
-        <FaHtml5
-          color="orange"
-          className="icon"
-          style={{ width: "20px", height: "20px" }}
-        />
-      );
-      break;
-    default:
-      return null;
+const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
+  const { id, itemId, label, disabled, children, ...other } = props;
+
+  const {
+    getRootProps,
+    getContentProps,
+    getIconContainerProps,
+    getLabelProps,
+    getGroupTransitionProps,
+    status,
+    publicAPI,
+  } = useTreeItem2({ id, itemId, children, label, disabled, rootRef: ref });
+
+  const item = publicAPI.getItem(itemId);
+  const expandable = isExpandable(children);
+  let icon;
+  // console.log("This is item", item.type);
+  if (item.type) {
+    icon = getIconFromFileType(item.type, status);
   }
 
-  return IconComponent;
-};
+  return (
+    <TreeItem2Provider itemId={itemId}>
+      <StyledTreeItemRoot {...getRootProps(other)}>
+        <CustomTreeItemContent
+          {...getContentProps({
+            className: clsx("content", {
+              "Mui-expanded": status.expanded,
+              "Mui-selected": status.selected,
+              "Mui-focused": status.focused,
+              "Mui-disabled": status.disabled,
+            }),
+          })}>
+          <TreeItem2IconContainer {...getIconContainerProps()}>
+            <TreeItem2Icon status={status} />
+          </TreeItem2IconContainer>
+          {/* <TreeItem2Checkbox {...getCheckboxProps()} /> */}
+          <CustomLabel
+            {...getLabelProps({
+              icon,
+              expandable: expandable && status.expanded,
+            })}
+          />
+        </CustomTreeItemContent>
+        {children && <TransitionComponent {...getGroupTransitionProps()} />}
+      </StyledTreeItemRoot>
+    </TreeItem2Provider>
+  );
+});
 
-export default FileSystem;
+export default function FileSystem({ folderList }) {
+  // const toggledItemRef = React.useRef({});
+  const [fileKey, setFileKey] = useRecoilState(fileKeyState);
+  const apiRef = useTreeViewApiRef();
+
+  const handleItemSelectionToggle = (event, itemId, isSelected) => {
+    const item = apiRef.current.getItem(itemId);
+    console.log("This is item id", item.id);
+    setFileKey(item.id);
+  };
+
+  return (
+    <RichTreeView
+      items={[folderList]}
+      aria-label="file explorer"
+      defaultExpandedItems={["Replit-Clone/", "Replit-Clone/base-node/"]}
+      defaultSelectedItems="Replit-Clone/"
+      apiRef={apiRef}
+      sx={{
+        height: "fit-content",
+        flexGrow: 1,
+        maxWidth: 400,
+        overflowY: "auto",
+        bgcolor: "whitesmoke",
+      }}
+      slots={{
+        item: CustomTreeItem,
+      }}
+      onItemSelectionToggle={handleItemSelectionToggle}
+    />
+  );
+}
