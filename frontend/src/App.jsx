@@ -1,6 +1,7 @@
 import { Container, Grid, Paper } from "@mui/material";
 import CodeEditor from "./components/CodeEditor";
 import FileSystem from "./components/FileSystem";
+import TerminalComponent from "./components/Terminal";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -45,8 +46,8 @@ function App() {
 
   return (
     <Container
-      maxWidth="lg"
-      sx={{ bgcolor: "#0f0a12", color: "gray.400", p: 5 }}>
+      maxWidth="xl"
+      sx={{ bgcolor: "#0f0a12", color: "gray.400" }}>
       <Grid
         container
         spacing={2}>
@@ -66,8 +67,14 @@ function App() {
           md={6}>
           <Paper
             elevation={0}
-            sx={{ height: "100%", bgcolor: "transparent" }}>
+            sx={{ height: "auto", bgcolor: "transparent" }}>
             <CodeEditor fileContent={fileContent} />
+          </Paper>
+          <Paper
+            elevation={0}
+            sx={{ height: "auto", bgcolor: "transparent" }}>
+            {/* <CodeEditor fileContent={fileContent} /> */}
+            <TerminalComponent />
           </Paper>
         </Grid>
       </Grid>
