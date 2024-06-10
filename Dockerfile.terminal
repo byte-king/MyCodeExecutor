@@ -1,0 +1,42 @@
+# Use the official Node.js image
+FROM node:22
+
+RUN groupadd -r appgroup && useradd -m -r -g appgroup appuser
+
+# Set the working directory
+WORKDIR /usr/src/app
+
+# Copy the backend and frontend directories into the image
+COPY . .
+
+# Navigate into the backend directory and install dependencies
+WORKDIR /usr/src/app/backend
+RUN npm install
+RUN npm install node-pty
+
+# Navigate back to the app directory
+WORKDIR /usr/src/app
+
+# Navigate into the frontend directory and install dependencies
+WORKDIR /usr/src/app/frontend
+RUN npm install
+# Copy application dependency manifests to the container image
+
+WORKDIR /usr/src/app
+
+# Create a restricted directory and set permissions
+RUN mkdir /usr/src/app/restricted && \
+    chown -R appuser:appgroup /usr/src/app && \
+    chown -R appuser:appgroup /usr/src/app/restricted
+
+# Switch to the non-root user
+USER appuser
+
+
+# Make the port available to the world outside this container
+EXPOSE 3001
+
+# Run the terminal service
+CMD ["node", "./backend/terminal.js"]
+
+

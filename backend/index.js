@@ -11,7 +11,8 @@ const path = require("path");
 const stream = require("stream");
 
 const app = express();
-const port = process.env.PORT || 3001;
+
+const port = process.env.BACKEND_PORT || 3005;
 
 // Initialize S3 client with Cloudflare R2 configuration
 const client = new S3Client({

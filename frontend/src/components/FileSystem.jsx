@@ -235,8 +235,9 @@ export default function FileSystem({ folderList }) {
 
   const handleItemSelectionToggle = (event, itemId, isSelected) => {
     const item = apiRef.current.getItem(itemId);
-    console.log("This is item id", item.id);
-    setFileKey(item.id);
+    // console.log("This is item ", item);
+    if (item.children.length === 0) setFileKey(item.id);
+    // check if it is actually a file
   };
 
   return (

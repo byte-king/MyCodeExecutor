@@ -1,0 +1,42 @@
+services:
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile.frontend
+  #   ports:
+  #     - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+  #   volumes:
+  #     - ./frontend:/usr/src/app
+  #   environment:
+  #     - NODE_ENV=development
+  #     - PORT=${FRONTEND_PORT}
+  #   env_file:
+  #     - .env
+
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile.backend
+  #   ports:
+  #     - "${BACKEND_PORT}:${BACKEND_PORT}"
+  #   volumes:
+  #     - ./backend:/usr/src/app
+  #   environment:
+  #     - NODE_ENV=development
+  #     - PORT=${BACKEND_PORT}
+  #   env_file:
+  #     - .env
+
+  terminal:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.terminal
+    ports:
+      - "${TERMINAL_PORT}:${TERMINAL_PORT}"
+    volumes:
+      - ./backend:/usr/src/app
+    environment:
+      - NODE_ENV=development
+      - PORT=${TERMINAL_PORT}
+    env_file:
+      - .env
