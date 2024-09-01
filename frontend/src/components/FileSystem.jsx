@@ -35,7 +35,7 @@ import { FaMarkdown } from "react-icons/fa";
 import { BsFiletypeJson } from "react-icons/bs";
 
 import { useTreeViewApiRef } from "@mui/x-tree-view/hooks";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useRecoilState } from "recoil";
 import { fileKeyState } from "../fileKeyState";
 
 const getIconFromFileType = (fileType, status) => {

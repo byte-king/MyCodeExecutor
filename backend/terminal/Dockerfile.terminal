@@ -1,0 +1,28 @@
+# Use the official Node.js image
+FROM node:22
+
+# Create a group and user for running the application
+RUN groupadd -r appgroup && useradd -m -r -g appgroup appuser
+
+# Set the working directory
+WORKDIR /usr/src/app
+
+# Copy the backend and frontend directories into the image
+COPY . ./code
+
+# Change ownership of the /code directory to appuser
+RUN chown -R appuser:appgroup /usr/src/app/code
+
+WORKDIR /usr/src/app/code 
+# Install necessary packages as root
+RUN npm install
+RUN npm install node-pty
+
+# Switch to the non-root user
+USER appuser
+
+# Expose the required port
+EXPOSE 3001
+
+# Run the terminal service
+CMD ["node", "terminal.js"]

@@ -26,7 +26,7 @@ const client = new S3Client({
 
 app.use(bodyParser.json());
 
-const cacheDir = path.join(__dirname, "cache");
+const cacheDir = path.join(__dirname, "/terminal/cache");
 
 // Ensure cache directory exists
 if (!fs.existsSync(cacheDir)) {

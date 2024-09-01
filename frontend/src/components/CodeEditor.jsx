@@ -1,7 +1,7 @@
 // src/CodeEditor.jsx
 import { useEffect, useRef, useState } from "react";
 import { Editor, loader } from "@monaco-editor/react";
-import axios from "axios";
+
 // Configure Monaco environment
 loader.config({
   paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor/min/vs" },
@@ -9,6 +9,8 @@ loader.config({
 
 function CodeEditor({ fileContent }) {
   const editorRef = useRef();
+  const [newFileContent, setFileContent] = useState(fileContent);
+
   const onMount = (editor) => {
     editorRef.current = editor;
     editorRef.current.focus();
@@ -16,75 +18,40 @@ function CodeEditor({ fileContent }) {
 
   useEffect(() => {
     loader.init().then((monaco) => {
-      // JavaScript/TypeScript Configuration
-      monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
-      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-        noSemanticValidation: false,
-        noSyntaxValidation: false,
-      });
+      // Enable full TypeScript Language Service
       monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-        target: monaco.languages.typescript.ScriptTarget.ES6,
+        target: monaco.languages.typescript.ScriptTarget.ESNext,
         allowNonTsExtensions: true,
+        noLib: false, // This includes the standard library (e.g., DOM, ESNext, etc.)
+        allowJs: true, // Allow JavaScript files to be part of the TypeScript project
       });
 
-      // CSS Configuration
-      monaco.languages.css.cssDefaults.setOptions({
-        validate: true,
-        lint: {
-          compatibleVendorPrefixes: "warning",
-          vendorPrefix: "warning",
-          duplicateProperties: "warning",
-          emptyRules: "warning",
-          importStatement: "ignore",
-          boxModel: "ignore",
-          universalSelector: "ignore",
-        },
+      // Enable autocompletion, suggestions, and other language features
+      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: false, // Enable semantic checking
+        noSyntaxValidation: false, // Enable syntax checking
       });
 
-      // HTML Configuration
-      monaco.languages.html.htmlDefaults.setOptions({
-        validate: true,
-        format: {
-          indentInnerHtml: true,
-        },
-        suggest: {
-          html5: true,
-          angular1: true,
-          ionic: true,
-        },
+      monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+        target: monaco.languages.typescript.ScriptTarget.ESNext,
+        allowNonTsExtensions: true,
+        noLib: false, // Includes all standard library types
+        allowJs: true, // Allow JavaScript files in the project
+        jsx: monaco.languages.typescript.JsxEmit.React, // Support JSX/TSX
       });
 
-      // JSX Configuration
-      monaco.languages.typescript.typescriptDefaults.addExtraLib(
-        `
-        declare module "*.jsx" {
-          const value: any;
-          export default value;
-        }
-        `,
-        "file:///node_modules/@types/jsx/index.d.ts"
-      );
-
-      // Provide custom completion items (autocomplete)
-      monaco.languages.registerCompletionItemProvider("javascript", {
-        provideCompletionItems: () => {
-          const suggestions = [
-            {
-              label: "console.log",
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: "console.log(${1:});",
-              insertTextRules:
-                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: "Log output to console",
-            },
-          ];
-          return { suggestions };
-        },
-      });
+      // Now, Monaco Editor should provide autocomplete for all possible functions, objects, and types
     });
-
-    // GetData();
   }, []);
+
+  useEffect(() => {
+    setFileContent(fileContent);
+  }, [fileContent]);
+
+  const handleFileChange = (value) => {
+    console.log("New file Content", value);
+    setFileContent(value);
+  };
 
   return (
     <div style={{ height: "90vh" }}>
@@ -92,8 +59,8 @@ function CodeEditor({ fileContent }) {
         height="100%"
         defaultLanguage="javascript"
         theme="vs-dark"
-        value={fileContent}
-        onChange={() => {}}
+        value={newFileContent}
+        onChange={handleFileChange}
         onMount={onMount}
       />
     </div>

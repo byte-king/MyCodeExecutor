@@ -29,7 +29,7 @@ services:
 
   terminal:
     build:
-      context: ./backend
+      context: ./backend/terminal
       dockerfile: Dockerfile.terminal
     ports:
       - "${TERMINAL_PORT}:${TERMINAL_PORT}"
